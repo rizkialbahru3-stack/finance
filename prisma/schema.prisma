@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Trip {
+  id          String     @id @default(cuid())
+  name        String
+  destination String
+  startDate   DateTime?
+  endDate     DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  members     Member[]
+  expenses    Expense[]
+  budgets     Budget[]
+  itineraries Itinerary[]
+}
+
+model Member {
+  id                 String        @id @default(cuid())
+  tripId             String
+  trip               Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  name               String
+  targetContribution Int           @default(400000)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  payments           Payment[]
+  paidExpenses       Expense[]     @relation("PaidBy")
+  shares             ExpenseShare[]
+
+  @@index([tripId])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount      Int
+  paymentDate DateTime @default(now())
+  method      String   @default("Cash")
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@index([memberId])
+}
+
+model Expense {
+  id             String         @id @default(cuid())
+  tripId         String
+  trip           Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  name           String
+  category       String         @default("Lainnya")
+  amount         Int
+  expenseDate    DateTime       @default(now())
+  paidByMemberId String?
+  paidBy         Member?        @relation("PaidBy", fields: [paidByMemberId], references: [id], onDelete: SetNull)
+  notes          String?
+  createdAt      DateTime       @default(now())
+  shares         ExpenseShare[]
+
+  @@index([tripId])
+}
+
+model ExpenseShare {
+  id       String  @id @default(cuid())
+  expenseId String
+  expense  Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  memberId String
+  member   Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount   Int
+
+  @@unique([expenseId, memberId])
+  @@index([memberId])
+}
+
+model Budget {
+  id            String   @id @default(cuid())
+  tripId        String
+  trip          Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  category      String
+  plannedAmount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tripId, category])
+}
+
+model Itinerary {
+  id        String   @id @default(cuid())
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  date      DateTime
+  time      String?
+  activity  String
+  location  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tripId])
+}
