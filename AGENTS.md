@@ -1,10 +1,11 @@
 # AGENTS.md
 
-GuciTrip Finance — aplikasi web (Indonesia) untuk mengelola keuangan patungan liburan 6 orang ke Guci, Tegal. Next 16.4, React 19, Tailwind 4, Prisma 6 + SQLite, Recharts, lucide-react. Tanpa login; satu trip aktif.
+GuciTrip Finance — aplikasi web (Indonesia) untuk mengelola keuangan patungan liburan 6 orang ke Guci, Tegal. Next 16.4, React 19, Tailwind 4, Prisma 6 + PostgreSQL (Vercel Postgres/Neon), Recharts, lucide-react. Tanpa login; satu trip aktif.
 
 ## Commands
 
-- `npm install` lalu `npx prisma migrate dev` lalu `npm run dev` — urutan setup wajib (pertama kali: migrate otomatis menjalankan seed via `tsx prisma/seed.ts`)
+- `npm install` lalu isi `.env` (`DATABASE_URL` postgres non-pooling, lihat `.env.example`) lalu `npx prisma migrate dev` lalu `npm run dev`
+- Deploy Vercel: otomatis via script `vercel-build` = `prisma migrate deploy && prisma db seed && next build`. Wajib set env `DATABASE_URL` di dashboard project.
 - `npm run build` / `npm start` — build produksi; semua route adalah dynamic (`export const dynamic = "force-dynamic"` di `app/layout.tsx`)
 - `npm run lint`, `npx tsc --noEmit` — tidak ada test runner / CI
 - Seed ulang: `npx prisma db seed` (hapus-isi-ulang: trip, 6 anggota, pembayaran, pengeluaran+share, budget, itinerary)
@@ -20,7 +21,7 @@ GuciTrip Finance — aplikasi web (Indonesia) untuk mengelola keuangan patungan 
 
 ## Quirks
 
-- `.env` `DATABASE_URL="file:./dev.db"` wajib ada — tanpa itu `prisma migrate/validate` gagal (P1012). `prisma/dev.db` hasil migrate; jangan commit bila tidak diinginkan.
+- `.env` `DATABASE_URL` postgres non-pooling wajib ada (lihat `.env.example`) — tanpa itu `prisma migrate/validate` gagal (P1012). Jangan commit `.env`. Migrasi SQLite lama sudah dihapus; baseline baru dibuat via `migrate dev` ke Postgres.
 - `next.config.ts` SENGAJA tanpa `cacheComponents` — flag itu merusak build (`dynamic` segment config incompatible + prerender DB gagal). Hanya tersisa Turbopack rule `*.css` → `@tailwindcss/turbopack`; jangan hapus.
 - Prisma dipin ke v6 (`prisma@6`, `@prisma/client@6`) — JANGAN upgrade ke v8 (CLI RC tanpa `migrate dev`/`validate`).
 - `ExpenseShare` dibuat saat `createExpense`: checkbox kosong = bagi rata ke semua anggota. Hapus expense menghapus shares (Cascade).
